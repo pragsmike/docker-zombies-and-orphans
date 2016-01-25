@@ -32,15 +32,15 @@ An alternative solution is [[https://github.com/krallin/tini][tini]], a minimal 
 root process in a Docker container.
 
 That's the summary.  If you want to experiment yourself, you might
-find the information below, and the enclosed utility, to be useful.
+find the information below to be useful.
 
-Unanswered questions I have:
+*** Unanswered questions I have:
 
 - Find out if Docker is using the Linux sub-reaper feature to allow
 the container's root process to adopt orphaned processes.
 
 - Many of the reports of problems, such as [[https://github.com/docker/docker/issues/1024][Container cannot connect to upstart]], are from
-the early days.  Have these problems been addressed in later Docker releases?
+the early days.  Have these problems been better  addressed in later Docker releases?
 
 ** Traditionally, init adopts orphaned child processes.
 In normal Unix-land, outside of any container, what happens is that the
@@ -51,10 +51,11 @@ that tells it so).  This action is known as "reaping" the dead child.
 If no process ever reaps the dead child, it will stay around forever as
 a "zombie" process.
 
-
 ** Subreapers
+
 Linux kernels after 3.4 offer a way that any process can take on the responsibility
 of being notified about orphaned child processes, and waiting for them.
+See [[http://kernelnewbies.org/Linux_3.4#head-669b0cddccfb9794868a04b2bccdc2bbf9bc0f9e][subreaper prctl operation]] for details.
 
 ** Docker root process
 
@@ -117,7 +118,7 @@ it appears as PID 1.
 docker run --rm -v `pwd`:/src ubuntu /src/a.out
 #+END_src
 
-#+results:
+#+RESULTS:
 | which      | PID | parent |
 | Child      |   5 |      1 |
 | Root       |   1 |      0 |
@@ -125,7 +126,6 @@ docker run --rm -v `pwd`:/src ubuntu /src/a.out
 
 
 Outside the container, we can see those same processes, but they have different pids.
-Our top-level process, which inside the container is pid 1, is actually pid 1821 when viewed from outside the container.
 
 
 * References
