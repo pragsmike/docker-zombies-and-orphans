@@ -36,11 +36,12 @@ find the information below to be useful.
 
 *** Unanswered questions I have:
 
-- Find out if Docker is using the Linux sub-reaper feature to allow
-the container's root process to adopt orphaned processes.
+- Find out if Docker is using the Linux sub-reaper feature to allow the
+  container's root process to adopt orphaned processes.
 
-- Many of the reports of problems, such as [[https://github.com/docker/docker/issues/1024][Container cannot connect to upstart]], are from
-the early days.  Have these problems been better  addressed in later Docker releases?
+- Many of the reports of problems, such as [[https://github.com/docker/docker/issues/1024][Container cannot connect to
+  upstart]], are from the early days.  Have these problems been better
+  addressed in later Docker releases?
 
 ** Traditionally, init adopts orphaned child processes.
 In normal Unix-land, outside of any container, what happens is that the
@@ -106,12 +107,12 @@ already have been adopted by some reaper process.
 We see that the grandchild has been reparented to process 2713.
 That turns out to be a subreaper run by the window manager on my box.
 
-If this were run on a server, it would likely pid 1 (init) instead.
+If this were run on a server, it would likely be pid 1 (init) instead.
 
 * Processes as seen inside the Container
 
-Inside the container, we see our own processes, with pid, parent pid.
-Because we told Docker to start /bin/bash as the container's top-level process,
+Inside the container, we see only our own processes, with PID numbers starting at 1.
+Because we told Docker to start =a.out= as the container's top-level root process,
 it appears as PID 1.
 
 #+BEGIN_src sh :results value :exports both
@@ -136,11 +137,7 @@ Outside the container, we can see those same processes, but they have different 
 The new PR_SET_CHILD_SUBREAPER prctl() operation allows userspace
 service managers/supervisors mark itself as a sort of 'sub-init', able
 to stay as the parent for all orphaned processes created by the started
-services. All SIGCHLD signals will be delivered to the service manager
-(commit)
-
-Does docker use subreaper?
-
+services. All SIGCHLD signals will be delivered to the service manager.
 
 [[https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/][Docker and the PID 1 reaping problem]]
 

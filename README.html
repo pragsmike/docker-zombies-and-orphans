@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Docker Zombies and Orphans</title>
-<!-- 2016-01-25 Mon 15:41 -->
+<!-- 2016-01-25 Mon 15:57 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="mg" />
@@ -226,18 +226,13 @@ find the information below to be useful.
 <h4 id="orgheadline1"><span class="section-number-4">1.1.1</span> Unanswered questions I have:</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <ul class="org-ul">
-<li>Find out if Docker is using the Linux sub-reaper feature to allow</li>
-</ul>
-<p>
-the container's root process to adopt orphaned processes.
-</p>
+<li>Find out if Docker is using the Linux sub-reaper feature to allow the
+container's root process to adopt orphaned processes.</li>
 
-<ul class="org-ul">
-<li>Many of the reports of problems, such as <a href="https://github.com/docker/docker/issues/1024">Container cannot connect to upstart</a>, are from</li>
+<li>Many of the reports of problems, such as <a href="https://github.com/docker/docker/issues/1024">Container cannot connect to
+upstart</a>, are from the early days.  Have these problems been better
+addressed in later Docker releases?</li>
 </ul>
-<p>
-the early days.  Have these problems been better  addressed in later Docker releases?
-</p>
 </div>
 </div>
 </div>
@@ -416,7 +411,7 @@ That turns out to be a subreaper run by the window manager on my box.
 </p>
 
 <p>
-If this were run on a server, it would likely pid 1 (init) instead.
+If this were run on a server, it would likely be pid 1 (init) instead.
 </p>
 </div>
 </div>
@@ -425,8 +420,8 @@ If this were run on a server, it would likely pid 1 (init) instead.
 <h2 id="orgheadline9"><span class="section-number-2">3</span> Processes as seen inside the Container</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-Inside the container, we see our own processes, with pid, parent pid.
-Because we told Docker to start /bin/bash as the container's top-level process,
+Inside the container, we see only our own processes, with PID numbers starting at 1.
+Because we told Docker to start <code>a.out</code> as the container's top-level root process,
 it appears as PID 1.
 </p>
 
@@ -493,14 +488,8 @@ Outside the container, we can see those same processes, but they have different 
 The new PR<sub>SET</sub><sub>CHILD</sub><sub>SUBREAPER</sub> prctl() operation allows userspace
 service managers/supervisors mark itself as a sort of 'sub-init', able
 to stay as the parent for all orphaned processes created by the started
-services. All SIGCHLD signals will be delivered to the service manager
-(commit)
+services. All SIGCHLD signals will be delivered to the service manager.
 </p>
-
-<p>
-Does docker use subreaper?
-</p>
-
 
 <p>
 <a href="https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/">Docker and the PID 1 reaping problem</a>
@@ -522,7 +511,7 @@ Does docker use subreaper?
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: mg</p>
-<p class="date">Created: 2016-01-25 Mon 15:41</p>
+<p class="date">Created: 2016-01-25 Mon 15:57</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
