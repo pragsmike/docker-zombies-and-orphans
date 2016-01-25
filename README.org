@@ -1,0 +1,151 @@
+# -*- mode: org; -*-
+#+TITLE: Docker Zombies and Orphans
+#+HTML_HEAD:      <style type="text/css">pre.src.src-c { background: DarkSlateGray; }</style>
+
+* What will happen to the children?
+
+When a process running in a docker container exits, what happens to its child processes?
+
+** TL;DR
+
+In my version of docker, at least, the processes running inside the container
+have different PID numbers than they do when viewed from the outside.
+In particular, the container's root process is number 1 inside the container,
+and its parent is 0.
+
+When a child's parent (not the root) is killed, the child is reparented to
+the container's root process.  At least that's what it looks like inside
+the container.
+
+Although Docker appears to reparent orphans to the container's root process,
+it can't guarantee that the root process will reap dead children correctly.
+
+A related problem is that =docker stop= will send a =SIGTERM= signal to
+the container's root process, but that process might not propagate the
+signal to its own children.  They'll be orphaned, and probably get
+reparented, but they won't know they're supposed to go away so they may
+stick around.
+
+These problems are described by the folks at Phusion in [[https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/][Docker and the PID 1 reaping problem]].
+
+An alternative solution is [[https://github.com/krallin/tini][tini]], a minimal init that is intended to be used as the
+root process in a Docker container.
+
+That's the summary.  If you want to experiment yourself, you might
+find the information below, and the enclosed utility, to be useful.
+
+Unanswered questions I have:
+
+- Find out if Docker is using the Linux sub-reaper feature to allow
+the container's root process to adopt orphaned processes.
+
+- Many of the reports of problems, such as [[https://github.com/docker/docker/issues/1024][Container cannot connect to upstart]], are from
+the early days.  Have these problems been addressed in later Docker releases?
+
+** Traditionally, init adopts orphaned child processes.
+In normal Unix-land, outside of any container, what happens is that the
+orphaned child processes are adopted by the init process.  The init
+process takes on the reponsibility of issuing a =wait(2)= call (or
+equivalent) when the child process exits (init will get a SIGCHLD signal
+that tells it so).  This action is known as "reaping" the dead child.
+If no process ever reaps the dead child, it will stay around forever as
+a "zombie" process.
+
+
+** Subreapers
+Linux kernels after 3.4 offer a way that any process can take on the responsibility
+of being notified about orphaned child processes, and waiting for them.
+
+** Docker root process
+
+When we start a container (=docker run=) we specify a command that it
+will use to create the top-level, or root, process in that container.
+When that process exits, the container stops.
+
+That root process may start others, which will see it as its parent.
+
+** The utility
+
+To probe the filial behavior of processes, we use a simple C utility.
+It creates a child process, which creates a grandchild process, and
+they all print their pid and that of their parent.  It's easy to get
+confused over "child" and "parent" here, so we'll use these names:
+
+| root       | the top-level process that is running the utility |
+| child      | the process started by the root                   |
+| grandchild | the process started by the child                  |
+
+We're interested in what happens to the grandchild process when the
+child goes away.  We use the rather ham-fisted technique of putting
+calls to =sleep(3)= in strategic places to force the grandchild to
+sample its parent pid after the child has exited.
+
+#+include: "dp.c" src c
+
+* Outside Any Container
+
+Let's establish what our utility will see when we run it in the host
+environment.  It will create a child and a grandchild, the child will
+exit, and then the grandchild will ask for its parent pid.
+
+By the time the grandchild gets around to doing a =getppid=, it will
+already have been adopted by some reaper process.
+
+#+BEGIN_src sh :results value :exports both
+./a.out
+#+END_src
+
+#+RESULTS:
+| which      |   PID | parent |
+| Child      | 26525 |  26524 |
+| Root       | 26524 |  26523 |
+| Grandchild | 26526 |   2713 |
+
+
+We see that the grandchild has been reparented to process 2713.
+That turns out to be a subreaper run by the window manager on my box.
+
+If this were run on a server, it would likely pid 1 (init) instead.
+
+* Processes as seen inside the Container
+
+Inside the container, we see our own processes, with pid, parent pid.
+Because we told Docker to start /bin/bash as the container's top-level process,
+it appears as PID 1.
+
+#+BEGIN_src sh :results value :exports both
+docker run --rm -v `pwd`:/src ubuntu /src/a.out
+#+END_src
+
+#+results:
+| which      | PID | parent |
+| Child      |   5 |      1 |
+| Root       |   1 |      0 |
+| Grandchild |   6 |      1 |
+
+
+Outside the container, we can see those same processes, but they have different pids.
+Our top-level process, which inside the container is pid 1, is actually pid 1821 when viewed from outside the container.
+
+
+* References
+
+[[https://github.com/krallin/tini][tini]] minimal init
+
+[[http://kernelnewbies.org/Linux_3.4#head-669b0cddccfb9794868a04b2bccdc2bbf9bc0f9e][subreaper prctl operation]] enables "sub-init".
+The new PR_SET_CHILD_SUBREAPER prctl() operation allows userspace
+service managers/supervisors mark itself as a sort of 'sub-init', able
+to stay as the parent for all orphaned processes created by the started
+services. All SIGCHLD signals will be delivered to the service manager
+(commit)
+
+Does docker use subreaper?
+
+
+[[https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/][Docker and the PID 1 reaping problem]]
+
+[[http://phusion.github.io/baseimage-docker/][Your docker image may be wrong]]
+
+[[http://linux.die.net/man/2/wait][wait(2)]]
+
+[[https://github.com/docker/docker/issues/1024][Container cannot connect to upstart]]
