@@ -27,6 +27,10 @@ reparented, but they won't know they're supposed to go away so they may
 stick around.
 
 These problems are described by the folks at Phusion in [[https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/][Docker and the PID 1 reaping problem]].
+They offer a smarter replacement for init that solves the problems,
+along with some others like syslog and cron.  (Personally, I lean toward
+making services be more "docker-native" -- just log to stdout, so appliances like
+[[https://github.com/gliderlabs/logspout][logspout]] can handle log aggregation for you.)
 
 An alternative solution is [[https://github.com/krallin/tini][tini]], a minimal init that is intended to be used as the
 root process in a Docker container.
@@ -54,9 +58,10 @@ a "zombie" process.
 
 ** Subreapers
 
-Linux kernels after 3.4 offer a way that any process can take on the responsibility
-of being notified about orphaned child processes, and waiting for them.
-See [[http://kernelnewbies.org/Linux_3.4#head-669b0cddccfb9794868a04b2bccdc2bbf9bc0f9e][subreaper prctl operation]] for details.
+Linux kernels after 3.4 offer a way that another process besides init
+can take on the responsibility of being notified about orphaned child
+processes, and waiting for them.  See [[http://kernelnewbies.org/Linux_3.4#head-669b0cddccfb9794868a04b2bccdc2bbf9bc0f9e][subreaper prctl operation]] for
+details.
 
 ** Docker root process
 
@@ -128,6 +133,7 @@ docker run --rm -v `pwd`:/src ubuntu /src/a.out
 
 Outside the container, we can see those same processes, but they have different pids.
 
+(I wonder what happened to processes 2, 3, and 4?)
 
 * References
 
