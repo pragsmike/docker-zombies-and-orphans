@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Docker Zombies and Orphans</title>
-<!-- 2016-01-25 Mon 16:18 -->
+<!-- 2016-01-25 Mon 16:23 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="mg" />
@@ -232,6 +232,9 @@ find the information below to be useful.
 <ul class="org-ul">
 <li>Find out if Docker is using the Linux sub-reaper feature to allow the
 container's root process to adopt orphaned processes.</li>
+
+<li>How does docker use <a href="https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt">cgroups</a>?  What can leak from this abstraction, and
+how does it handle these cases?</li>
 
 <li>Many of the reports of problems, such as <a href="https://github.com/docker/docker/issues/1024">Container cannot connect to
 upstart</a>, are from the early days.  Have these problems been better
@@ -514,12 +517,16 @@ services. All SIGCHLD signals will be delivered to the service manager.
 <p>
 <a href="https://github.com/docker/docker/issues/1024">Container cannot connect to upstart</a>
 </p>
+
+<p>
+<a href="https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt">cgroups</a>
+</p>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: mg</p>
-<p class="date">Created: 2016-01-25 Mon 16:18</p>
+<p class="date">Created: 2016-01-25 Mon 16:23</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

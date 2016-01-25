@@ -43,6 +43,9 @@ find the information below to be useful.
 - Find out if Docker is using the Linux sub-reaper feature to allow the
   container's root process to adopt orphaned processes.
 
+- How does docker use [[https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt][cgroups]]?  What can leak from this abstraction, and
+  how does it handle these cases?
+
 - Many of the reports of problems, such as [[https://github.com/docker/docker/issues/1024][Container cannot connect to
   upstart]], are from the early days.  Have these problems been better
   addressed in later Docker releases?
@@ -152,3 +155,5 @@ services. All SIGCHLD signals will be delivered to the service manager.
 [[http://linux.die.net/man/2/wait][wait(2)]]
 
 [[https://github.com/docker/docker/issues/1024][Container cannot connect to upstart]]
+
+[[https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt][cgroups]]
